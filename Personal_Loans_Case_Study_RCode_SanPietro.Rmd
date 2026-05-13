@@ -1,0 +1,119 @@
+---
+title: "PersonalLoansCasePrompt"
+author: "Michael San Pietro"
+date: "2026-01-20"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library('tidyverse')
+library('readxl')
+```
+
+```{r}
+PersonLoansData <- read_excel("C:/Users/masan/Downloads/2026__28Candidate_29_Personal_Loans_Case_Dataset.xlsx")
+head(PersonLoansData)
+#turn string variables into dummies
+PersonLoansDatamod <- PersonLoansData %>%
+mutate(FICOPoor=ifelse(Fico_Score_group=="poor", 1, 0),
+       FICOFair=ifelse(Fico_Score_group=="fair", 1, 0),
+       FICOGood=ifelse(Fico_Score_group=="good", 1, 0),
+       FICOVeryGood=ifelse(Fico_Score_group=="very_good", 1, 0),
+       FICOExcellent=ifelse(Fico_Score_group=="excellent", 1, 0),
+       Employed=ifelse(Employment_Status=="full_time", 1, 0),
+       PartTime=ifelse(Employment_Status=="part_time", 1, 0),
+       Unemployed=ifelse(Employment_Status=="unemployed", 1, 0)
+       )
+#print all unique Reason Values
+unique(PersonLoansDatamod$)
+#turn Reason into dummies
+PersonLoansDatamod <- PersonLoansDatamod %>%
+mutate(ReasonDebtConsolidation=ifelse(Reason=="debt_consolidation", 1, 0),
+       ReasonHomeImprovement=ifelse(Reason=="home_renovation", 1, 0),
+       ReasonMajorPurchase=ifelse(Reason=="major_purchase", 1, 0),
+       ReasonOther=ifelse(Reason=="other", 1, 0),
+       ReasonMedicalBill=ifelse(Reason=="medical_bill", 1, 0),
+       ReasonWedding=ifelse(Reason=="wedding", 1, 0),
+       ReasonUnexpectedExpense=ifelse(Reason=="unexpected_expense", 1, 0),
+       ReasonCreditCardRefinancing=ifelse(Reason=="credit_card_refinancing", 1, 0)
+       )
+```
+```{r}
+#split by Lender A,B, or C
+PersonLoansDataA <- PersonLoansDatamod %>%
+  filter(Lender=="A")
+PersonLoansDataB <- PersonLoansDatamod %>%
+  filter(Lender=="B")
+PersonLoansDataC <- PersonLoansDatamod %>%
+  filter(Lender=="C")
+#find average Approved rate 
+meanA <- mean(PersonLoansDataA$Approved)
+meanB <- mean(PersonLoansDataB$Approved)
+meanC <- mean(PersonLoansDataC$Approved)
+meanA
+meanB
+meanC
+```
+
+```{r}
+#run a logistic regression for each lender
+modelA <- glm(Approved ~ Loan_Amount+FICO_score+Employed+PartTime+Monthly_Gross_Income+Monthly_Gross_Income+Monthly_Housing_Payment+Ever_Bankrupt_or_Foreclose, data=PersonLoansDataA, family=binomial, )
+summary(modelA)
+```
+
+
+```{r}
+modelB <- glm(Approved ~ Loan_Amount+FICO_score+Employed+PartTime+Monthly_Housing_Payment+Ever_Bankrupt_or_Foreclose, data=PersonLoansDataB, family=binomial)
+summary(modelB)
+
+```
+
+```{r}
+modelC <- glm(Approved ~ Loan_Amount+FICO_score+Employed+PartTime+Monthly_Gross_Income+Monthly_Housing_Payment+Ever_Bankrupt_or_Foreclose, data=PersonLoansDataC, family=binomial)
+summary(modelC)
+```
+```{r}
+overallmodel <- glm(Approved ~ applications+Loan_Amount+FICO_score+Employed+PartTime+Monthly_Gross_Income+Monthly_Housing_Payment+Ever_Bankrupt_or_Foreclose+ReasonHomeImprovement+ReasonDebtConsolidation+ReasonMajorPurchase+ReasonMedicalBill+ReasonWedding+ReasonUnexpectedExpense+ReasonCreditCardRefinancing, data=PersonLoansDatamod, family=binomial)
+summary(overallmodel)
+
+
+```
+```{r}
+#find average of any variable for 3 groups
+meanLoanA <- mean(PersonLoansDataA$Unemployed[PersonLoansDataA$Approved==1])
+meanLoanB <- mean(PersonLoansDataB$Unemployed[PersonLoansDataA$Approved==1])
+meanLoanC <- mean(PersonLoansDataC$Unemployed[PersonLoansDataA$Approved==1])
+
+meanLoanA
+meanLoanB
+meanLoanC
+
+
+
+```
+```{r}
+#find average monthly income for B and average monthly income conditional on being unemployed
+meanIncomeB <- mean(PersonLoansDataB$Monthly_Gross_Income[PersonLoansDataB$Approved==1])
+meanIncomeBUnemployed <- mean(PersonLoansDataB$Monthly_Gross_Income[PersonLoansDataB$Unemployed==1 & PersonLoansDataB$Approved==1])
+
+meanIncomeB
+meanIncomeBUnemployed
+
+
+```
+```{r}
+#average bounty for each lender conditional on approval
+meanBountyA <- mean(PersonLoansDataA$bounty[PersonLoansDataA$Approved==1])
+meanBountyB <- mean(PersonLoansDataB$bounty[PersonLoansDataB$Approved==1])
+meanBountyC <- mean(PersonLoansDataC$bounty[PersonLoansDataC$Approved==1])
+
+meanBountyA
+meanBountyB
+meanBountyC
+```
+
+
